@@ -10,8 +10,7 @@ import { pick, types } from '@react-native-documents/picker';
 
 const isPickerCancellationError = (error: unknown) => {
   return (
-    error instanceof Error &&
-    error.message === 'User canceled document picker'
+    error instanceof Error && error.message === 'User canceled document picker'
   );
 };
 
@@ -49,7 +48,10 @@ export default function App() {
       openEditorWithVideo(pickedFile.uri);
     } catch (err: any) {
       if (!isPickerCancellationError(err)) {
-        Alert.alert('Error', `Failed to pick a video.\n${getErrorMessage(err)}`);
+        Alert.alert(
+          'Error',
+          `Failed to pick a video.\n${getErrorMessage(err)}`,
+        );
       }
     }
   };
