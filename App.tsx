@@ -8,6 +8,21 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Video from 'react-native-video';
 import { pick, types } from '@react-native-documents/picker';
 
+const isPickerCancellationError = (error: unknown) => {
+  return (
+    error instanceof Error &&
+    error.message === 'User canceled document picker'
+  );
+};
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Something went wrong';
+};
+
 export default function App() {
   // State to store the selected video URI
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
@@ -18,25 +33,23 @@ export default function App() {
   // Function to pick video from device
   const pickVideo = async () => {
     try {
-      const result = await pick({
+      const [pickedFile] = await pick({
         type: [types.video],
         mode: 'open',
       });
 
-      if (result && result.length > 0) {
-        const pickedFile = result[0];
-        const videoUri = pickedFile.uri;
-
-        setSelectedVideoUri(videoUri);
-
-        // Immediately open editor with selected video
-        openEditorWithVideo(videoUri);
+      if (!pickedFile?.uri) {
+        Alert.alert('Error', 'No video file was selected.');
+        return;
       }
+
+      setSelectedVideoUri(pickedFile.uri);
+
+      // Immediately open editor with selected video
+      openEditorWithVideo(pickedFile.uri);
     } catch (err: any) {
-      // Check if user cancelled
-      if (err?.message === 'User canceled document picker') {
-      } else {
-        Alert.alert('Cancel', 'User cancelled video selection');
+      if (!isPickerCancellationError(err)) {
+        Alert.alert('Error', `Failed to pick a video.\n${getErrorMessage(err)}`);
       }
     }
   };
@@ -70,8 +83,11 @@ export default function App() {
       } else if (!result.success) {
         Alert.alert('Cancel', 'User cancelled video editor');
       }
-    } catch (e: any) {
-      Alert.alert('Error', 'Failed to open video editor', e.message || e);
+    } catch (error: unknown) {
+      Alert.alert(
+        'Error',
+        `Failed to open video editor.\n${getErrorMessage(error)}`,
+      );
     }
   };
 
